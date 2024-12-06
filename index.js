@@ -121,26 +121,29 @@ async function downloadVideo(url, title) {
     }
   });
 
-  const totalLength = response.headers['content-length'];
-  let receivedBytes = 0;
+  return new Promise((resolve, reject) => {
+    const totalLength = response.headers['content-length'];
+    let receivedBytes = 0;
 
-  const writer = fs.createWriteStream(`${title}.mp4`);
-  response.data.on('data', (chunk) => {
-    writer.write(chunk);
-    receivedBytes += chunk.length;
-    const progress = ((receivedBytes / totalLength) * 100).toFixed(2);
-    process.stdout.write(`\r下载进度: ${progress}%`);
-  });
+    const writer = fs.createWriteStream(`${title}.mp4`);
+    response.data.on('data', (chunk) => {
+      writer.write(chunk);
+      receivedBytes += chunk.length;
+      const progress = ((receivedBytes / totalLength) * 100).toFixed(2);
+      process.stdout.write(`\r下载进度: ${progress}%`);
+    });
 
-  response.data.on('end', () => {
-    writer.end();
-    console.log('\n');
-  });
+    response.data.on('end', () => {
+      writer.end();
+      console.log('\n');
+      resolve();
+    });
 
-  response.data.on('error', (err) => {
-    writer.end();
-    throw new Error(`下载过程中发生错误: ${err}`);
-  });
+    response.data.on('error', (err) => {
+      writer.end();
+      reject(`下载过程中发生错误: ${err}`)
+    });
+  })
 }
 
 main();
